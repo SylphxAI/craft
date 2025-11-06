@@ -38,7 +38,7 @@ export function craft<T>(base: T, producer: Producer<T>): T {
     return base;
   }
 
-  return finalize(state, true);
+  return finalize(state);
 }
 
 /**
