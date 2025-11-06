@@ -1,10 +1,14 @@
 import {
   applyPatches as immerApplyPatches,
+  enablePatches,
   produceWithPatches as immerProduceWithPatches,
 } from "immer";
 import { bench, describe } from "vitest";
 import { applyPatches } from "../src/patches";
 import { produceWithPatches } from "../src/produce-with-patches";
+
+// Enable immer patches plugin
+enablePatches();
 
 describe("Patches generation - Simple updates", () => {
   const baseState = {

@@ -1,6 +1,9 @@
-import { produce as immerProduce } from "immer";
+import { enableMapSet, produce as immerProduce } from "immer";
 import { bench, describe } from "vitest";
 import { craft } from "../src/craft";
+
+// Enable immer Map/Set support
+enableMapSet();
 
 describe("Map operations", () => {
   const baseState = {
