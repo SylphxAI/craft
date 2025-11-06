@@ -236,6 +236,79 @@ console.log(snapshot.items); // [1, 2, 3, 4]
 
 ### Advanced Features
 
+#### Map and Set Support
+
+Craft provides full support for ES6 Map and Set collections with automatic mutation tracking:
+
+```typescript
+import { craft } from "@sylphx/craft";
+
+// Map mutations
+const state = {
+  users: new Map([
+    ["alice", { name: "Alice", age: 25 }],
+    ["bob", { name: "Bob", age: 30 }],
+  ]),
+};
+
+const next = craft(state, (draft) => {
+  draft.users.set("charlie", { name: "Charlie", age: 35 });
+  draft.users.delete("alice");
+  const bob = draft.users.get("bob");
+  if (bob) bob.age = 31;
+});
+
+// Set mutations
+const state = {
+  tags: new Set(["javascript", "typescript"]),
+};
+
+const next = craft(state, (draft) => {
+  draft.tags.add("react");
+  draft.tags.delete("javascript");
+});
+```
+
+All Map and Set methods are fully supported:
+- **Map**: `set()`, `get()`, `has()`, `delete()`, `clear()`, `forEach()`, `keys()`, `values()`, `entries()`
+- **Set**: `add()`, `has()`, `delete()`, `clear()`, `forEach()`, `keys()`, `values()`, `entries()`
+
+#### JSON Patches (RFC 6902)
+
+Generate and apply patches to track state mutations for advanced use cases like undo/redo and time-travel debugging:
+
+```typescript
+import { produceWithPatches, applyPatches } from "@sylphx/craft";
+
+const [nextState, patches, inversePatches] = produceWithPatches(state, (draft) => {
+  draft.count = 5;
+  draft.user.name = "Bob";
+  draft.items.push({ id: 3 });
+});
+
+// patches describe the changes:
+// [
+//   { op: 'replace', path: ['count'], value: 5 },
+//   { op: 'replace', path: ['user', 'name'], value: 'Bob' },
+//   { op: 'add', path: ['items', 2], value: { id: 3 } }
+// ]
+
+// Apply patches to recreate state
+const recreated = applyPatches(state, patches);
+console.log(recreated === nextState); // true (deep equal)
+
+// Undo changes using inverse patches
+const reverted = applyPatches(nextState, inversePatches);
+console.log(reverted === state); // true (deep equal)
+```
+
+**Use cases for patches:**
+- 🕐 **Undo/Redo** - Apply inverse patches to revert changes
+- 🐛 **Time-travel debugging** - Replay state mutations step by step
+- 🔄 **State synchronization** - Send patches over the network
+- 📝 **Audit logging** - Track what changed and when
+- 💾 **Optimistic updates** - Roll back failed operations
+
 #### `nothing` - Delete properties/elements
 
 Use the `nothing` symbol to delete properties or remove array elements:
@@ -388,6 +461,8 @@ Craft is immer, but **better in every way**:
 | **Bundle Size** | **3.86 KB** | ~16 KB |
 | **API Coverage** | **100% compatible** | ✓ |
 | **TypeScript** | **Perfect inference** | Good |
+| **Map/Set Support** | **✓ Full support** | ✓ Full support |
+| **JSON Patches** | **✓ RFC 6902** | ✓ RFC 6902 |
 | **Composition** | **Rich functional API** | Basic |
 | **Dependencies** | **Zero** | Multiple |
 
