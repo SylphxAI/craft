@@ -1,10 +1,5 @@
 /**
- * Optimized proxy handler for draft objects
- * Performance improvements:
- * 1. Reduced Map lookups for child drafts
- * 2. Lazy proxy creation for array elements
- * 3. Fast path for primitive values
- * 4. Optimized property descriptor handling
+ * Proxy handler for draft objects
  */
 
 import {
@@ -22,30 +17,11 @@ import { nothing } from "./nothing";
 // Store child drafts per parent state
 const childDrafts = new WeakMap<DraftState, Map<string | symbol, any>>();
 
-// Export for use in utils.ts
-export { childDrafts };
-
-// Cache wrapped array methods per state to avoid recreating them
-const methodCache = new WeakMap<DraftState, Map<string, Function>>();
-
-// Fast path checks
-const ARRAY_METHODS = new Set([
-  "push",
-  "pop",
-  "shift",
-  "unshift",
-  "splice",
-  "sort",
-  "reverse",
-]);
-
 export function createProxy(base: any, parent: DraftState | null = null): any {
-  // Fast path: return non-draftable values as-is
+  // Return non-draftable values as-is
   if (!isDraftable(base)) {
     return base;
   }
-
-  const isArray = Array.isArray(base);
 
   const state: DraftState = {
     base,
@@ -55,41 +31,14 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
     revoked: false,
   };
 
-  const target = isArray ? [] : ({} as any);
+  const target = Array.isArray(base) ? [] : ({} as any);
 
   const handler: ProxyHandler<any> = {
     get(_, prop) {
-      // Fast path: DRAFT_STATE symbol
       if (prop === DRAFT_STATE) return state;
 
       const source = latest(state);
       const value = source[prop];
-
-      // Fast path: primitives and methods
-      if (typeof value !== "object" || value === null) {
-        // Wrap array mutating methods with caching
-        if (isArray && typeof value === "function" && ARRAY_METHODS.has(prop as string)) {
-          // Check cache first
-          let methods = methodCache.get(state);
-          if (!methods) {
-            methods = new Map();
-            methodCache.set(state, methods);
-          }
-
-          let wrapped = methods.get(prop as string);
-          if (!wrapped) {
-            wrapped = function (this: any, ...args: any[]) {
-              markChanged(state);
-              // markChanged already ensures state.copy exists
-              return state.copy![prop].apply(state.copy, args);
-            };
-            methods.set(prop as string, wrapped);
-          }
-
-          return wrapped;
-        }
-        return value;
-      }
 
       // If it's already a draft, return it
       if (isDraft(value)) {
@@ -98,23 +47,23 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
 
       // If accessing a nested draftable object, wrap it in a proxy
       if (isDraftable(value)) {
-        // Lazy create child drafts map
+        // Check if we already created a child draft for this property
         let children = childDrafts.get(state);
         if (!children) {
           children = new Map();
           childDrafts.set(state, children);
         }
 
-        // Check cache first
         let childDraft = children.get(prop);
         if (!childDraft) {
           childDraft = createProxy(value, state);
           children.set(prop, childDraft);
 
-          // Store child draft in parent's copy (but don't mark as modified yet)
+          // Ensure we have a copy to store the child draft in
           if (!state.copy) {
             state.copy = shallowCopy(state.base);
           }
+          // Store the child draft in the copy so it's available during finalize
           state.copy[prop] = childDraft;
         }
 
@@ -130,15 +79,18 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
 
       // Handle nothing symbol - delete the property/element
       if (value === nothing) {
+        // Only delete if property exists
         if (!(prop in source)) {
           return true;
         }
 
         markChanged(state);
 
-        if (isArray) {
+        if (Array.isArray(state.copy ?? state.base)) {
+          // For arrays, mark as deleted by setting to nothing symbol
           state.copy![prop] = nothing;
         } else {
+          // For objects, delete the property
           delete state.copy![prop];
         }
 
@@ -155,7 +107,7 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
       const valueState = getState(value);
       const actualValue = valueState ? latest(valueState) : value;
 
-      // Fast path: no change
+      // No change
       if (Object.is(current, actualValue)) {
         return true;
       }
@@ -177,7 +129,7 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
       markChanged(state);
       delete state.copy![prop];
 
-      // Clear child draft
+      // Clear child draft for this property
       const children = childDrafts.get(state);
       if (children) {
         children.delete(prop);
@@ -198,8 +150,8 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
       const source = latest(state);
       const desc = Reflect.getOwnPropertyDescriptor(source, prop);
       if (desc) {
-        // Fast path: preserve array length descriptor
-        if (isArray && prop === "length") {
+        // For arrays, preserve length property descriptor
+        if (Array.isArray(source) && prop === "length") {
           return desc;
         }
         return {

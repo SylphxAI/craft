@@ -154,43 +154,90 @@ export function finalize(state: DraftState, autoFreeze?: boolean): any {
   }
 
   const result = state.copy!;
+  const isArray = Array.isArray(result);
 
-  // Handle arrays with nothing symbols (remove marked elements)
-  if (Array.isArray(result)) {
-    const filtered: any[] = [];
+  // Optimized path for arrays
+  if (isArray) {
+    // Single-pass optimization: scan for nothing and drafts simultaneously
+    let hasNothing = false;
+    let hasDrafts = false;
+
     for (let i = 0; i < result.length; i++) {
       const value = result[i];
       if (value === nothing) {
-        // Skip nothing elements
-        continue;
+        hasNothing = true;
+        break; // If we find nothing, we need to filter
       }
       if (isDraft(value)) {
-        const childState = getState(value);
-        if (childState) {
-          filtered.push(finalize(childState, autoFreeze));
+        hasDrafts = true;
+      }
+    }
+
+    // Fast path: no nothing, no drafts - just freeze
+    if (!hasNothing && !hasDrafts) {
+      return autoFreeze ? freeze(result, false) : result;
+    }
+
+    // If we have nothing symbols, filter while finalizing drafts
+    if (hasNothing) {
+      const filtered: any[] = [];
+      for (let i = 0; i < result.length; i++) {
+        const value = result[i];
+        if (value === nothing) continue;
+
+        if (isDraft(value)) {
+          const childState = getState(value);
+          filtered.push(childState ? finalize(childState, autoFreeze) : value);
         } else {
           filtered.push(value);
         }
-      } else {
-        filtered.push(value);
+      }
+      return autoFreeze ? freeze(filtered, false) : filtered;
+    }
+
+    // Only drafts - finalize in place
+    for (let i = 0; i < result.length; i++) {
+      const value = result[i];
+      if (isDraft(value)) {
+        const childState = getState(value);
+        if (childState) {
+          result[i] = finalize(childState, autoFreeze);
+        }
       }
     }
-    return autoFreeze ? freeze(filtered, false) : filtered;
+
+    return autoFreeze ? freeze(result, false) : result;
   }
 
-  // Finalize all properties recursively
-  each(result, (key, value) => {
-    if (isDraft(value)) {
-      const childState = getState(value);
-      if (childState) {
-        result[key] = finalize(childState, autoFreeze);
+  // Finalize object properties recursively
+  // Pre-scan to avoid unnecessary work
+  let hasDrafts = false;
+  for (const key in result) {
+    if (Object.prototype.hasOwnProperty.call(result, key)) {
+      if (isDraft(result[key])) {
+        hasDrafts = true;
+        break;
       }
-    } else if (isDraftable(value)) {
-      // Even if it's not a draft, we need to check if there's a modified child
-      // This shouldn't happen with our implementation, but let's be safe
-      result[key] = value;
     }
-  });
+  }
+
+  // Fast path: no drafts to finalize
+  if (!hasDrafts) {
+    return autoFreeze ? freeze(result, false) : result;
+  }
+
+  // Finalize draft properties
+  for (const key in result) {
+    if (Object.prototype.hasOwnProperty.call(result, key)) {
+      const value = result[key];
+      if (isDraft(value)) {
+        const childState = getState(value);
+        if (childState) {
+          result[key] = finalize(childState, autoFreeze);
+        }
+      }
+    }
+  }
 
   if (autoFreeze) {
     freeze(result, false);
