@@ -2,6 +2,9 @@
  * Utility functions for Craft
  */
 
+import { nothing } from "./nothing";
+import { getConfig } from "./config";
+
 const DRAFT_STATE = Symbol("craft-draft-state");
 const PROXY_TARGET = Symbol("craft-proxy-target");
 
@@ -98,6 +101,14 @@ export function shallowCopy<T>(base: T): T {
     return base.slice() as any;
   }
   if (base && typeof base === "object") {
+    const config = getConfig();
+    if (config.useStrictShallowCopy) {
+      // Copy all properties including non-enumerable
+      const copy = Object.create(Object.getPrototypeOf(base));
+      const props = Object.getOwnPropertyDescriptors(base);
+      Object.defineProperties(copy, props);
+      return copy;
+    }
     return Object.assign({}, base);
   }
   return base;
@@ -132,12 +143,40 @@ export function freeze<T>(obj: T, deep = false): T {
   return obj;
 }
 
-export function finalize(state: DraftState, autoFreeze = true): any {
+export function finalize(state: DraftState, autoFreeze?: boolean): any {
+  // Use config if autoFreeze not explicitly provided
+  if (autoFreeze === undefined) {
+    autoFreeze = getConfig().autoFreeze;
+  }
+
   if (!state.modified) {
     return state.base;
   }
 
   const result = state.copy!;
+
+  // Handle arrays with nothing symbols (remove marked elements)
+  if (Array.isArray(result)) {
+    const filtered: any[] = [];
+    for (let i = 0; i < result.length; i++) {
+      const value = result[i];
+      if (value === nothing) {
+        // Skip nothing elements
+        continue;
+      }
+      if (isDraft(value)) {
+        const childState = getState(value);
+        if (childState) {
+          filtered.push(finalize(childState, autoFreeze));
+        } else {
+          filtered.push(value);
+        }
+      } else {
+        filtered.push(value);
+      }
+    }
+    return autoFreeze ? freeze(filtered, false) : filtered;
+  }
 
   // Finalize all properties recursively
   each(result, (key, value) => {

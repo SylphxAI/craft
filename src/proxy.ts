@@ -12,6 +12,7 @@ import {
   markChanged,
   shallowCopy,
 } from "./utils";
+import { nothing } from "./nothing";
 
 // Store child drafts per parent state
 const childDrafts = new WeakMap<DraftState, Map<string | symbol, any>>();
@@ -75,6 +76,32 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
     set(_, prop, value) {
       const source = latest(state);
       const current = source[prop];
+
+      // Handle nothing symbol - delete the property/element
+      if (value === nothing) {
+        // Only delete if property exists
+        if (!(prop in source)) {
+          return true;
+        }
+
+        markChanged(state);
+
+        if (Array.isArray(state.copy ?? state.base)) {
+          // For arrays, mark as deleted by setting to nothing symbol
+          state.copy![prop] = nothing;
+        } else {
+          // For objects, delete the property
+          delete state.copy![prop];
+        }
+
+        // Clear child draft
+        const children = childDrafts.get(state);
+        if (children) {
+          children.delete(prop);
+        }
+
+        return true;
+      }
 
       // Unwrap value if it's a draft
       const valueState = getState(value);

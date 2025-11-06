@@ -209,6 +209,72 @@ craft(state, (draft) => {
 console.log(snapshot.items); // [1, 2, 3, 4]
 ```
 
+### Advanced Features
+
+#### `nothing` - Delete properties/elements
+
+Use the `nothing` symbol to delete properties or remove array elements:
+
+```typescript
+import { craft, nothing } from "@sylphx/craft";
+
+// Delete object property
+const next = craft(state, (draft) => {
+  draft.obsoleteField = nothing;
+});
+
+// Remove array elements
+const next = craft(state, (draft) => {
+  draft.items[2] = nothing; // Remove 3rd element
+});
+
+// Remove multiple array elements
+const next = craft(state, (draft) => {
+  draft.todos.forEach((todo, i) => {
+    if (todo.done) {
+      draft.todos[i] = nothing; // Remove completed todos
+    }
+  });
+});
+```
+
+#### TypeScript Utilities
+
+Cast between draft and immutable types:
+
+```typescript
+import { castDraft, castImmutable } from "@sylphx/craft";
+
+// Cast immutable to draft (type-only)
+const draft = castDraft(immutableState);
+
+// Cast mutable to immutable (type-only)
+const immutable = castImmutable(mutableState);
+```
+
+### Configuration
+
+#### `setAutoFreeze(enabled)`
+
+Control automatic freezing of results:
+
+```typescript
+import { setAutoFreeze } from "@sylphx/craft";
+
+// Disable auto-freeze for performance
+setAutoFreeze(false);
+```
+
+#### `setUseStrictShallowCopy(enabled)`
+
+Use strict shallow copy (includes non-enumerable properties):
+
+```typescript
+import { setUseStrictShallowCopy } from "@sylphx/craft";
+
+setUseStrictShallowCopy(true);
+```
+
 ### Utilities
 
 #### `freeze(obj, deep?)`
