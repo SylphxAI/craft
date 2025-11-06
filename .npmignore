@@ -1,0 +1,23 @@
+# Source files
+src/
+tests/
+benchmarks/
+
+# Config files
+*.config.ts
+tsconfig.json
+biome.json
+vitest.config.ts
+bunup.config.ts
+
+# Development
+.git/
+.github/
+.vscode/
+node_modules/
+coverage/
+
+# Misc
+*.log
+*.tsbuildinfo
+.DS_Store
