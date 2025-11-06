@@ -39,7 +39,7 @@ Craft is a **high-performance** TypeScript library that makes working with immut
 ## Installation
 
 ```bash
-# Using bun
+# Using bun (recommended)
 bun add @sylphx/craft
 
 # Using npm
@@ -47,6 +47,9 @@ npm install @sylphx/craft
 
 # Using pnpm
 pnpm add @sylphx/craft
+
+# Using yarn
+yarn add @sylphx/craft
 ```
 
 ## Quick Start
@@ -345,7 +348,7 @@ Based on comprehensive real-world benchmarks (5+ runs, statistically validated):
 ### 📈 Run Benchmarks Yourself
 
 ```bash
-npm run bench
+bun bench
 ```
 
 See the difference with your own eyes!

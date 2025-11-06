@@ -1,7 +1,7 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { resetConfig, setAutoFreeze, setUseStrictShallowCopy } from "../src/config";
 import { craft } from "../src/craft";
 import { createDraft, finishDraft } from "../src/manual";
-import { setAutoFreeze, resetConfig, setUseStrictShallowCopy } from "../src/config";
 import { revokeProxy } from "../src/proxy";
 
 describe("Edge cases and coverage", () => {
@@ -20,7 +20,8 @@ describe("Edge cases and coverage", () => {
   it("should handle already frozen base object", () => {
     const frozen = Object.freeze({ count: 0 });
     const next = craft(frozen, (draft) => {
-      draft.count = 1;
+      // TypeScript knows frozen is readonly, but craft creates a mutable draft
+      (draft as any).count = 1;
     });
 
     expect(next.count).toBe(1);

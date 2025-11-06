@@ -16,7 +16,6 @@ import {
   isDraftable,
   latest,
   markChanged,
-  peek,
   shallowCopy,
 } from "./utils";
 

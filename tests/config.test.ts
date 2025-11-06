@@ -1,10 +1,5 @@
-import { describe, expect, it, beforeEach } from "vitest";
-import {
-  getConfig,
-  setAutoFreeze,
-  setUseStrictShallowCopy,
-  resetConfig,
-} from "../src/config";
+import { beforeEach, describe, expect, it } from "vitest";
+import { getConfig, resetConfig, setAutoFreeze, setUseStrictShallowCopy } from "../src/config";
 import { craft } from "../src/craft";
 
 describe("Configuration", () => {
