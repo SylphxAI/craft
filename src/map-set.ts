@@ -1,6 +1,6 @@
 /**
  * Map and Set proxy handlers
- * Full immer-compatible Map/Set mutation tracking
+ * Full Map/Set mutation tracking support
  */
 
 import { DRAFT_STATE, type DraftState, markChanged } from "./utils";

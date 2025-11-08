@@ -1,5 +1,5 @@
 /**
- * Craft - A lightweight, functional, and blazingly fast alternative to immer
+ * Craft - A lightweight, functional, and blazingly fast library for immutable state updates
  *
  * @packageDocumentation
  */
@@ -29,7 +29,7 @@ export { applyPatches, type Patch } from "./patches";
 // Type exports
 export type { Composer, Draft, Immutable, Producer, Primitive } from "./types";
 
-// Aliases for immer compatibility
+// Convenience aliases
 export { craft as produce } from "./craft";
 export { craftWithPatches as produceWithPatches } from "./craft-with-patches";
 

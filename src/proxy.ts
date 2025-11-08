@@ -91,7 +91,7 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
 
       // If accessing a nested draftable object, wrap it in a proxy
       if (isDraftable(value)) {
-        // immer-inspired optimization: only create draft if value is from base
+        // OPTIMIZATION: only create draft if value is from base
         // This avoids creating copies for values that were already replaced
         if (value === state.base[prop]) {
           // Use drafts map stored on state - faster than WeakMap lookup

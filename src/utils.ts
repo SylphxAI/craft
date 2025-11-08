@@ -15,7 +15,7 @@ export interface DraftState {
   modified: boolean;
   parent: DraftState | null;
   revoked: boolean;
-  finalized: boolean; // immer-inspired: prevent duplicate finalization
+  finalized: boolean; // Prevent duplicate finalization
   drafts?: Map<string | symbol, any>; // Store child drafts directly on state
 }
 
@@ -39,7 +39,7 @@ export function latest(state: DraftState): any {
   return state.copy ?? state.base;
 }
 
-// Peek at a property without creating a draft (immer-inspired optimization)
+// Peek at a property without creating a draft (performance optimization)
 export function peek(target: any, prop: string | symbol): any {
   const state = target[DRAFT_STATE];
   const source = state ? latest(state) : target;
@@ -194,7 +194,7 @@ export function freeze<T>(obj: T, deep = false): T {
 const LARGE_ARRAY_THRESHOLD = 500;
 
 export function finalize(state: DraftState, autoFreeze?: boolean): any {
-  // immer-inspired: prevent duplicate finalization
+  // Prevent duplicate finalization
   if (state.finalized) {
     return state.copy ?? state.base;
   }
@@ -203,7 +203,7 @@ export function finalize(state: DraftState, autoFreeze?: boolean): any {
   const shouldFreeze = autoFreeze ?? getConfig().autoFreeze;
 
   if (!state.modified) {
-    // immer-inspired: check if already frozen
+    // Check if already frozen
     const value = state.base;
     if (Object.isFrozen(value)) {
       return value;
