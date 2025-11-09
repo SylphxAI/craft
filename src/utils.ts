@@ -218,13 +218,6 @@ export function finalize(state: DraftState, autoFreeze?: boolean): any {
   // Mark as finalized before processing
   state.finalized = true;
 
-  // Check if this is an RRB array proxy
-  if ((state as any).getRRB) {
-    const { finalizeRRBArray } = require("./rrb-array-proxy");
-    const result = finalizeRRBArray(state);
-    return shouldFreeze ? freeze(result, false) : result;
-  }
-
   const result = state.copy!;
   const isArray = Array.isArray(result);
 

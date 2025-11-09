@@ -28,7 +28,7 @@ Craft is a **high-performance** TypeScript library that makes working with immut
 - 🔥 **Up to 35x faster** on large Set operations
 - ⚡ **24x faster** applying JSON patches
 - 💨 **3-6x faster** on Map/Set mutations
-- 📦 **Only 4.6 KB gzipped** - Similar size to immer (~4.7 KB)
+- 📦 **Only 3.1 KB gzipped** - 34% smaller than immer (~4.7 KB)
 
 ### **Developer Experience**
 - 🎯 **Type Safe** - Full TypeScript support with perfect inference
@@ -615,7 +615,7 @@ Craft delivers superior performance and features:
 | Feature | Craft | immer |
 |---------|-------|-------|
 | **Performance** | **1.4-35x faster** | Baseline |
-| **Bundle Size** | **4.6 KB gzipped** | ~4.7 KB gzipped |
+| **Bundle Size** | **3.1 KB gzipped** | ~4.7 KB gzipped |
 | **API Design** | **Similar API** | Producer-based |
 | **TypeScript** | **Perfect inference** | Good |
 | **Map/Set Support** | **✓ 3-35x faster** | ✓ Full support |
