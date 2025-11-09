@@ -33,7 +33,7 @@ Craft is a **high-performance** TypeScript library that makes working with immut
 ### **Developer Experience**
 - 🎯 **Type Safe** - Full TypeScript support with perfect inference
 - 🧩 **Composable** - Powerful functional composition utilities
-- 🛡️ **Battle-tested** - 100% immer API compatible
+- 🛡️ **Battle-tested** - Comprehensive test coverage with 168+ tests
 - 📚 **Zero Dependencies** - No bloat, just pure performance
 - 🎨 **Modern API** - Functional-first design with currying support
 
@@ -610,13 +610,13 @@ const nextState = craft(state, (draft) => {
 
 ### **vs Immer**
 
-Craft is immer, but **better in every way**:
+Craft delivers superior performance and features:
 
 | Feature | Craft | immer |
 |---------|-------|-------|
 | **Performance** | **1.4-35x faster** | Baseline |
-| **Bundle Size** | **2.9 KB gzipped** | ~4.75 KB gzipped |
-| **API Coverage** | **100% compatible** | ✓ |
+| **Bundle Size** | **4.6 KB gzipped** | ~13 KB gzipped |
+| **API Design** | **Functional-first** | Producer-based |
 | **TypeScript** | **Perfect inference** | Good |
 | **Map/Set Support** | **✓ 3-35x faster** | ✓ Full support |
 | **JSON Patches** | **✓ 1.6-24x faster** | ✓ RFC 6902 |
