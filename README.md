@@ -7,6 +7,7 @@
 [![npm version](https://img.shields.io/npm/v/@sylphx/craft.svg?style=flat-square)](https://www.npmjs.com/package/@sylphx/craft)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/@sylphx/craft?style=flat-square)](https://bundlephobia.com/package/@sylphx/craft)
 [![license](https://img.shields.io/npm/l/@sylphx/craft.svg?style=flat-square)](https://github.com/SylphxAI/craft/blob/main/LICENSE)
+[![coverage](https://img.shields.io/badge/coverage-53.11%25-yellow?style=flat-square)](https://craft-n8zu96jy6-sylphx.vercel.app)
 
 **1.4-35x faster than immer** • **4.6 KB gzipped** • **Zero dependencies** • **100% Type-safe**
 
