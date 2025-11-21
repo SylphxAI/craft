@@ -17,6 +17,9 @@ export interface DraftState {
   revoked: boolean;
   finalized: boolean; // Prevent duplicate finalization
   drafts?: Map<string | symbol, any>; // Store child drafts directly on state
+  // Array mutation optimizations - avoid O(n) copy for push/pop operations
+  arrayAppends?: any[]; // Items to append (for push operations)
+  arrayTruncate?: number; // New length (for pop operations)
 }
 
 export function isDraft(value: any): boolean {
@@ -101,6 +104,31 @@ export function current<T>(value: T): T {
 
   const state = getState(value);
   if (!state) return value;
+
+  // Handle array appends optimization
+  if (state.arrayAppends && state.arrayAppends.length > 0) {
+    const result = [...state.base, ...state.arrayAppends];
+
+    // Recursively finalize nested drafts in appends
+    for (let i = state.base.length; i < result.length; i++) {
+      const val = result[i];
+      const mapState = getMapState(val);
+      if (mapState) {
+        result[i] = mapState.copy ?? mapState.base;
+        continue;
+      }
+      const setState = getSetState(val);
+      if (setState) {
+        result[i] = setState.copy ?? setState.base;
+        continue;
+      }
+      if (isDraft(val)) {
+        result[i] = current(val);
+      }
+    }
+
+    return freeze(result, true);
+  }
 
   const currentState = latest(state);
 
@@ -217,6 +245,35 @@ export function finalize(state: DraftState, autoFreeze?: boolean): any {
 
   // Mark as finalized before processing
   state.finalized = true;
+
+  // Handle array appends optimization
+  if (state.arrayAppends && state.arrayAppends.length > 0) {
+    // Create final array with base + appends (single concat instead of copy + multiple pushes)
+    const result = [...state.base, ...state.arrayAppends];
+
+    // Finalize any draft items in appends
+    for (let i = state.base.length; i < result.length; i++) {
+      const value = result[i];
+      const mapState = getMapState(value);
+      if (mapState) {
+        result[i] = finalizeMap(mapState);
+        continue;
+      }
+      const setState = getSetState(value);
+      if (setState) {
+        result[i] = finalizeSet(setState);
+        continue;
+      }
+      if (isDraft(value)) {
+        const childState = getState(value);
+        if (childState) {
+          result[i] = finalize(childState, shouldFreeze);
+        }
+      }
+    }
+
+    return shouldFreeze ? freeze(result, false) : result;
+  }
 
   const result = state.copy!;
   const isArray = Array.isArray(result);
