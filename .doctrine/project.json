@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "repo": "SylphxAI/craft",
+    "name": "Craft",
+    "lifecycle": "production",
+    "layer": "foundation",
+    "summary": "High-performance TypeScript immutable state update package with patches, composition helpers, Map/Set support, docs, tests, and benchmarks.",
+    "goals": [
+      "Provide the public @sylphx/craft package exports and debug export.",
+      "Own immutable update behavior, draft/finalize helpers, patches, composition utilities, Map/Set support, benchmarks, tests, and docs.",
+      "Keep package performance claims, bundle claims, release notes, and generated API docs backed by current evidence."
+    ],
+    "nonGoals": [
+      "Own application-specific state models, UI framework bindings, persistence, synchronization, or customer business workflows.",
+      "Own enterprise doctrine, package release infrastructure, or consuming application delivery policy.",
+      "Own downstream app performance budgets beyond the package API and benchmark surface."
+    ]
+  },
+  "boundaries": {
+    "owns": [
+      {
+        "name": "craft-package-api",
+        "description": "The @sylphx/craft package exports, debug export, immutable update semantics, patch semantics, composition helpers, Map/Set support, and package metadata."
+      },
+      {
+        "name": "craft-docs-tests-benchmarks",
+        "description": "Repository README, docs site content, release notes, tests, benchmarks, bundle/performance claims, and package examples."
+      }
+    ],
+    "doesNotOwn": [
+      "Application-specific state models, UI framework bindings, persistence, synchronization, server cache policy, or customer business workflows.",
+      "Package release infrastructure owned by reusable SylphxAI workflows or consuming application delivery policy.",
+      "Enterprise engineering doctrine and manifest schema owned by SylphxAI/doctrine."
+    ],
+    "publicSurfaces": [
+      {
+        "type": "package-export",
+        "name": "@sylphx/craft package exports",
+        "location": "package.json"
+      },
+      {
+        "type": "api",
+        "name": "Craft source export surface",
+        "location": "src/index.ts and src/index-debug.ts"
+      },
+      {
+        "type": "documentation",
+        "name": "README, docs, and release notes",
+        "location": "README.md, docs/, and RELEASE_NOTES_v1.3.0.md"
+      },
+      {
+        "type": "workflow",
+        "name": "Main-branch release workflow",
+        "location": ".github/workflows/release.yml"
+      }
+    ],
+    "allowedDependencies": [
+      {
+        "repo": "SylphxAI/doctrine",
+        "surface": "project manifest schema and engineering doctrine",
+        "direction": "peer-public"
+      },
+      {
+        "repo": "SylphxAI/.github",
+        "surface": "reusable release workflow",
+        "direction": "peer-public"
+      }
+    ],
+    "forbiddenCouplings": [
+      "Do not add application-specific state models, UI framework adapters, persistence, or customer workflow assumptions to the package core.",
+      "Do not make consumers depend on internal source files, benchmark internals, or documentation implementation details instead of package exports.",
+      "Do not fork doctrine standards into this repository."
+    ]
+  },
+  "documentation": {
+    "adr": {
+      "path": "docs/adr/",
+      "status": "planned"
+    },
+    "specs": {
+      "path": "docs/guide/",
+      "status": "present"
+    },
+    "catalog": {
+      "path": ".doctrine/project.json",
+      "status": "present"
+    },
+    "runbooks": {
+      "path": "docs/",
+      "status": "planned"
+    },
+    "generatedReferences": {
+      "path": "docs/api/",
+      "status": "present"
+    }
+  },
+  "delivery": {
+    "ciModel": "none",
+    "requiredContexts": [],
+    "deployPath": "Main-branch Release delegates to SylphxAI/.github reusable release workflow for package publication; no PR CI workflow is present in .github/workflows at this baseline.",
+    "productionProof": "Passing biome check, typecheck, tests, build, relevant benchmarks for performance changes, successful release workflow, and package-registry/readme readback for published versions.",
+    "recoveryClass": "forward-fix-only"
+  },
+  "adoption": {
+    "status": "baseline",
+    "gaps": [
+      {
+        "id": "pr-ci-workflow-missing",
+        "description": "The repository has release automation but no PR/merge_group CI workflow recorded at this baseline.",
+        "owner": "SylphxAI/craft",
+        "target": "before adoption.status becomes full"
+      },
+      {
+        "id": "benchmark-claim-freshness",
+        "description": "README includes performance, bundle-size, and coverage claims; keep benchmarks and generated docs fresh before treating those claims as production proof.",
+        "owner": "SylphxAI/craft",
+        "target": "next package performance or docs release"
+      },
+      {
+        "id": "release-runbook-missing",
+        "description": "Published package versions are forward-only for consumers; add bad-release and registry recovery guidance before full adoption.",
+        "owner": "SylphxAI/craft",
+        "target": "before adoption.status becomes full"
+      }
+    ]
+  }
+}
