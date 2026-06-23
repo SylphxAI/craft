@@ -102,7 +102,22 @@
     "requiredContexts": [],
     "deployPath": "Main-branch Release delegates to SylphxAI/.github reusable release workflow for package publication; no PR CI workflow is present in .github/workflows at this baseline.",
     "productionProof": "Passing biome check, typecheck, tests, build, relevant benchmarks for performance changes, successful release workflow, and package-registry/readme readback for published versions.",
-    "recoveryClass": "forward-fix-only"
+    "recoveryClass": "forward-fix-only",
+    "packageRelease": {
+      "publishesPackages": true,
+      "ecosystems": [
+        "npm",
+        "changesets"
+      ],
+      "releaseIntent": "Changesets under .changeset/ are the source of release intent for @sylphx/craft.",
+      "versionPr": "Version PRs must be opened by sylphx-release-bot or another certified GitHub App-owned release identity through the reusable release workflow; the repository-scoped Actions token is not an accepted version PR author.",
+      "publisher": "Protected SylphxAI/.github reusable release workflow; npm publication must use trusted/OIDC publishing or a documented bounded token fallback with expiry, provenance, and registry readback.",
+      "requiredContexts": [
+        "release-evidence/pass",
+        "supply-chain:provenance"
+      ],
+      "publishProof": "npm registry readback for @sylphx/craft plus provenance/attestation evidence after the release workflow publishes."
+    }
   },
   "adoption": {
     "status": "baseline",
