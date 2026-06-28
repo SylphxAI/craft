@@ -127,7 +127,7 @@ export function current<T>(value: T): T {
       }
     }
 
-    return freeze(result, true);
+    return freeze(result, true) as T;
   }
 
   const currentState = latest(state);
