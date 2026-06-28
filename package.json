@@ -20,7 +20,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "bunup",
+    "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
     "bench": "vitest bench",
