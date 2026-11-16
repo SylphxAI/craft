@@ -19,7 +19,7 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsup",
-    "test": "vitest run",
+    "test": "node ./node_modules/vitest/vitest.mjs run",
     "test:watch": "vitest",
     "bench": "vitest bench",
     "lint": "biome check .",

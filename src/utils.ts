@@ -17,7 +17,7 @@ export interface DraftState {
   parent: DraftState | null;
   revoked: boolean;
   finalized: boolean; // Prevent duplicate finalization
-  drafts?: Map<string | symbol, any>; // Store child drafts directly on state
+  drafts?: Map<any, any>; // Store child drafts directly on state
   // Array mutation optimizations - avoid O(n) copy for push/pop operations
   arrayAppends?: any[]; // Items to append (for push operations)
   arrayTruncate?: number; // New length (for pop operations)
@@ -36,7 +36,7 @@ export function isDraftable(value: any): boolean {
 }
 
 export function getState(draft: any): DraftState | undefined {
-  return draft[DRAFT_STATE];
+  return draft?.[DRAFT_STATE];
 }
 
 export function latest(state: DraftState): any {
@@ -91,18 +91,20 @@ export function original<T>(value: T): T | undefined {
  * ```
  */
 export function current<T>(value: T): T {
-  if (!isDraft(value)) {
-    // Check if it's a Map/Set proxy
-    const mapState = getMapState(value);
-    if (mapState) {
-      return (mapState.copy ?? mapState.base) as T;
-    }
-    const setState = getSetState(value);
-    if (setState) {
-      return (setState.copy ?? setState.base) as T;
-    }
-    return value;
+  const collectionState = getMapState(value) ?? getSetState(value);
+  if (collectionState) {
+    const source = collectionState.copy ?? collectionState.base;
+    const snapshotValue = (item: any) => {
+      const draft = collectionState.drafts?.get(item) ?? item;
+      return isDraft(draft) ? current(draft) : item;
+    };
+    return (
+      source instanceof Map
+        ? new Map([...source].map(([key, item]) => [key, snapshotValue(item)]))
+        : new Set([...source].map(snapshotValue))
+    ) as T;
   }
+  if (!isDraft(value)) return value;
 
   const state = getState(value);
   if (!state) return value;
@@ -116,12 +118,12 @@ export function current<T>(value: T): T {
       const val = result[i];
       const mapState = getMapState(val);
       if (mapState) {
-        result[i] = mapState.copy ?? mapState.base;
+        result[i] = current(val);
         continue;
       }
       const setState = getSetState(val);
       if (setState) {
-        result[i] = setState.copy ?? setState.base;
+        result[i] = current(val);
         continue;
       }
       if (isDraft(val)) {
@@ -142,12 +144,12 @@ export function current<T>(value: T): T {
     // Handle Map/Set proxies
     const mapState = getMapState(val);
     if (mapState) {
-      result[key] = mapState.copy ?? mapState.base;
+      result[key] = current(val);
       return;
     }
     const setState = getSetState(val);
     if (setState) {
-      result[key] = setState.copy ?? setState.base;
+      result[key] = current(val);
       return;
     }
 
@@ -161,6 +163,10 @@ export function current<T>(value: T): T {
 }
 
 function defaultShallowCopy<T>(base: T): T {
+  if (base instanceof Map)
+    return Object.defineProperties(new Map(base), Object.getOwnPropertyDescriptors(base)) as T;
+  if (base instanceof Set)
+    return Object.defineProperties(new Set(base), Object.getOwnPropertyDescriptors(base)) as T;
   if (Array.isArray(base)) {
     // Direct slice() is faster than .call() indirection
     return base.slice() as any;
@@ -224,6 +230,8 @@ export function freeze<T>(obj: T, deep = false): T {
 const LARGE_ARRAY_THRESHOLD = 500;
 
 export function finalize(state: DraftState, autoFreeze?: boolean): any {
+  if (state.base instanceof Map) return finalizeMap(state as import("./map-set").MapState);
+  if (state.base instanceof Set) return finalizeSet(state as import("./map-set").SetState);
   // Prevent duplicate finalization
   if (state.finalized) {
     return state.copy ?? state.base;

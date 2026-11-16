@@ -248,10 +248,20 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
 
     defineProperty(target, prop, descriptor) {
       assertSafeProperty(prop);
-      return Reflect.defineProperty(target, prop, descriptor);
+      markChanged(state);
+      state.drafts?.delete(prop);
+      return (
+        Reflect.defineProperty(state.copy!, prop, descriptor) &&
+        Reflect.defineProperty(target, prop, descriptor)
+      );
+    },
+
+    setPrototypeOf() {
+      throw new TypeError("Cannot change a draft prototype");
     },
 
     has(_, prop) {
+      assertSafeProperty(prop);
       return prop in (state.copy ?? state.base);
     },
 
@@ -259,7 +269,10 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
       return Reflect.ownKeys(state.copy ?? state.base);
     },
 
-    getOwnPropertyDescriptor(_, prop) {
+    getOwnPropertyDescriptor(target, prop) {
+      assertSafeProperty(prop);
+      const fixed = Reflect.getOwnPropertyDescriptor(target, prop);
+      if (fixed && !fixed.configurable && prop !== "length") return fixed;
       const source = state.copy ?? state.base;
       const desc = Reflect.getOwnPropertyDescriptor(source, prop);
       if (desc) {
