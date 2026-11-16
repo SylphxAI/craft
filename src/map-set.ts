@@ -3,6 +3,7 @@
  * Full Map/Set mutation tracking support
  */
 
+import { assertSafeProperty } from "./safe-path";
 import { DRAFT_STATE, type DraftState, markChanged } from "./utils";
 
 const DRAFT_MAP_STATE = Symbol("craft-draft-map-state");
@@ -40,6 +41,7 @@ export function createMapProxy(base: Map<any, any>, parent: DraftState | null): 
     get(target, prop) {
       if (prop === DRAFT_MAP_STATE) return state;
       if (prop === DRAFT_STATE) return parent;
+      assertSafeProperty(prop);
 
       const value = target[prop as keyof Map<any, any>];
 
@@ -48,13 +50,16 @@ export function createMapProxy(base: Map<any, any>, parent: DraftState | null): 
         switch (prop) {
           case "set":
             return (key: any, val: any) => {
+              assertSafeProperty(key);
               if (!state.modified) {
                 prepareCopy(state);
               }
-              return state.copy!.set(key, val);
+              state.copy!.set(key, val);
+              return proxy;
             };
           case "delete":
             return (key: any) => {
+              assertSafeProperty(key);
               if (!state.modified) {
                 prepareCopy(state);
               }
@@ -69,11 +74,13 @@ export function createMapProxy(base: Map<any, any>, parent: DraftState | null): 
             };
           case "get":
             return (key: any) => {
+              assertSafeProperty(key);
               const source = state.copy ?? state.base;
               return source.get(key);
             };
           case "has":
             return (key: any) => {
+              assertSafeProperty(key);
               const source = state.copy ?? state.base;
               return source.has(key);
             };
@@ -109,6 +116,18 @@ export function createMapProxy(base: Map<any, any>, parent: DraftState | null): 
 
       return value;
     },
+    set(target, prop, value) {
+      assertSafeProperty(prop);
+      return Reflect.set(target, prop, value);
+    },
+    deleteProperty(target, prop) {
+      assertSafeProperty(prop);
+      return Reflect.deleteProperty(target, prop);
+    },
+    defineProperty(target, prop, descriptor) {
+      assertSafeProperty(prop);
+      return Reflect.defineProperty(target, prop, descriptor);
+    },
     has(target, prop) {
       return prop in target;
     },
@@ -131,6 +150,7 @@ export function createSetProxy(base: Set<any>, parent: DraftState | null): Set<a
     get(target, prop) {
       if (prop === DRAFT_SET_STATE) return state;
       if (prop === DRAFT_STATE) return parent;
+      assertSafeProperty(prop);
 
       const value = target[prop as keyof Set<any>];
 
@@ -142,7 +162,8 @@ export function createSetProxy(base: Set<any>, parent: DraftState | null): Set<a
               if (!state.modified) {
                 prepareCopySet(state);
               }
-              return state.copy!.add(val);
+              state.copy!.add(val);
+              return proxy;
             };
           case "delete":
             return (val: any) => {
@@ -194,6 +215,18 @@ export function createSetProxy(base: Set<any>, parent: DraftState | null): Set<a
       }
 
       return value;
+    },
+    set(target, prop, value) {
+      assertSafeProperty(prop);
+      return Reflect.set(target, prop, value);
+    },
+    deleteProperty(target, prop) {
+      assertSafeProperty(prop);
+      return Reflect.deleteProperty(target, prop);
+    },
+    defineProperty(target, prop, descriptor) {
+      assertSafeProperty(prop);
+      return Reflect.defineProperty(target, prop, descriptor);
     },
     has(target, prop) {
       return prop in target;

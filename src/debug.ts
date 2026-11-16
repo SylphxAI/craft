@@ -325,7 +325,8 @@ export function visualizeDraft(value: any, label = "Draft"): void {
 export function assertDraft(value: any, message?: string): asserts value is any {
   if (!isDraft(value)) {
     throw new Error(
-      message || `Expected a draft, but got: ${typeof value}. Are you accessing the original state instead of the draft?`,
+      message ||
+        `Expected a draft, but got: ${typeof value}. Are you accessing the original state instead of the draft?`,
     );
   }
 }

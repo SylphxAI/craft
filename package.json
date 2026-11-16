@@ -16,9 +16,7 @@
       "types": "./dist/index-debug.d.ts"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
@@ -34,14 +32,7 @@
     "version": "changeset version",
     "release": "bun run build && changeset publish"
   },
-  "keywords": [
-    "immutable",
-    "state",
-    "functional",
-    "copy-on-write",
-    "performance",
-    "typescript"
-  ],
+  "keywords": ["immutable", "state", "functional", "copy-on-write", "performance", "typescript"],
   "author": "Sylphx",
   "license": "MIT",
   "repository": {

@@ -5,6 +5,7 @@
 import { getConfig } from "./config";
 import { finalizeMap, finalizeSet, getMapState, getSetState } from "./map-set";
 import { nothing } from "./nothing";
+import { assertSafeProperty } from "./safe-path";
 
 const DRAFT_STATE = Symbol("craft-draft-state");
 const PROXY_TARGET = Symbol("craft-proxy-target");
@@ -44,6 +45,7 @@ export function latest(state: DraftState): any {
 
 // Peek at a property without creating a draft (performance optimization)
 export function peek(target: any, prop: string | symbol): any {
+  assertSafeProperty(prop);
   const state = target[DRAFT_STATE];
   const source = state ? latest(state) : target;
   return source[prop];

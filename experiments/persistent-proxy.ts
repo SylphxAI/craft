@@ -45,12 +45,12 @@ function createArrayProxy<T>(list: PersistentList<T>): T[] {
   const handler: ProxyHandler<PersistentList<T>> = {
     get(target, prop) {
       // 數組長度
-      if (prop === 'length') {
+      if (prop === "length") {
         return target.length;
       }
 
       // 數組索引訪問
-      if (typeof prop === 'string' && !isNaN(Number(prop))) {
+      if (typeof prop === "string" && !Number.isNaN(Number(prop))) {
         return target.get(Number(prop));
       }
 
@@ -60,27 +60,27 @@ function createArrayProxy<T>(list: PersistentList<T>): T[] {
       }
 
       // 數組方法
-      if (prop === 'push') {
+      if (prop === "push") {
         return (...values: T[]) => {
           const newList = target.push(...values);
           return createArrayProxy(newList); // 返回新 Proxy
         };
       }
 
-      if (prop === 'map') {
+      if (prop === "map") {
         return (fn: (item: T, index: number) => any) => {
           return target.toArray().map(fn);
         };
       }
 
-      if (prop === 'filter') {
+      if (prop === "filter") {
         return (fn: (item: T) => boolean) => {
           return target.toArray().filter(fn);
         };
       }
 
       // toArray() - 轉換為真正的數組
-      if (prop === 'toArray') {
+      if (prop === "toArray") {
         return () => target.toArray();
       }
 
@@ -89,7 +89,7 @@ function createArrayProxy<T>(list: PersistentList<T>): T[] {
     },
 
     set(target, prop, value) {
-      if (typeof prop === 'string' && !isNaN(Number(prop))) {
+      if (typeof prop === "string" && !Number.isNaN(Number(prop))) {
         const newList = target.set(Number(prop), value);
         // 問題：無法返回新的 Proxy，因為 set trap 必須返回 boolean
         // 這是一個限制！
@@ -111,22 +111,22 @@ function createArrayProxy<T>(list: PersistentList<T>): T[] {
 const list1 = new PersistentList([1, 2, 3]);
 const proxy1 = createArrayProxy(list1);
 
-console.log('=== 基本操作 ===');
-console.log(proxy1[0]);           // 1
-console.log(proxy1.length);       // 3
+console.log("=== 基本操作 ===");
+console.log(proxy1[0]); // 1
+console.log(proxy1.length); // 3
 console.log(Array.isArray(proxy1)); // true (通過 getPrototypeOf)
 
-console.log('\n=== Push 操作（返回新 Proxy）===');
+console.log("\n=== Push 操作（返回新 Proxy）===");
 const proxy2 = proxy1.push(4);
-console.log(proxy1.length);       // 3 (原 proxy 未變)
-console.log(proxy2.length);       // 4 (新 proxy)
-console.log(proxy2[3]);           // 4
+console.log(proxy1.length); // 3 (原 proxy 未變)
+console.log(proxy2.length); // 4 (新 proxy)
+console.log(proxy2[3]); // 4
 
-console.log('\n=== 迭代 ===');
+console.log("\n=== 迭代 ===");
 for (const item of proxy2) {
-  console.log(item);  // 1, 2, 3, 4
+  console.log(item); // 1, 2, 3, 4
 }
 
-console.log('\n=== Map ===');
-const doubled = proxy2.map(x => x * 2);
-console.log(doubled);  // [2, 4, 6, 8]
+console.log("\n=== Map ===");
+const doubled = proxy2.map((x) => x * 2);
+console.log(doubled); // [2, 4, 6, 8]

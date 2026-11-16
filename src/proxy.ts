@@ -9,6 +9,7 @@
 
 import { createMapProxy, createSetProxy, isMap, isSet } from "./map-set";
 import { nothing } from "./nothing";
+import { assertSafeProperty } from "./safe-path";
 import {
   DRAFT_STATE,
   type DraftState,
@@ -55,6 +56,11 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
       // Fast path: DRAFT_STATE symbol
       if (prop === DRAFT_STATE) return state;
 
+      // Native array species algorithms read constructor. Treat it as absent
+      // rather than exposing a constructor/prototype traversal through drafts.
+      if (isArray && prop === "constructor") return undefined;
+      assertSafeProperty(prop);
+
       // Handle array length with pending appends
       if (isArray && prop === "length" && state.arrayAppends && state.arrayAppends.length > 0) {
         const baseLength = state.base.length;
@@ -66,7 +72,12 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
       const value = source[prop];
 
       // Handle array index access with pending appends
-      if (isArray && typeof prop === "string" && !isNaN(Number(prop)) && state.arrayAppends) {
+      if (
+        isArray &&
+        typeof prop === "string" &&
+        !Number.isNaN(Number(prop)) &&
+        state.arrayAppends
+      ) {
         const index = Number(prop);
         const baseLength = state.base.length;
         if (index >= baseLength && index < baseLength + state.arrayAppends.length) {
@@ -172,6 +183,7 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
     },
 
     set(_, prop, value) {
+      assertSafeProperty(prop);
       // If using array appends optimization, need to materialize copy for non-append operations
       if (state.arrayAppends && state.arrayAppends.length > 0) {
         // Materialize the array (combine base + appends)
@@ -224,6 +236,7 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
     },
 
     deleteProperty(_, prop) {
+      assertSafeProperty(prop);
       markChanged(state);
       delete state.copy![prop];
 
@@ -231,6 +244,11 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
       state.drafts?.delete(prop);
 
       return true;
+    },
+
+    defineProperty(target, prop, descriptor) {
+      assertSafeProperty(prop);
+      return Reflect.defineProperty(target, prop, descriptor);
     },
 
     has(_, prop) {

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { resetConfig } from "../src/config";
 import { craft } from "../src/craft";
+import { craftWithPatches } from "../src/craft-with-patches";
 import { createDraft, finishDraft } from "../src/manual";
 import { nothing } from "../src/nothing";
 import { applyPatches, createPatchListener } from "../src/patches";
-import { craftWithPatches } from "../src/craft-with-patches";
 import { current, freeze, peek } from "../src/utils";
 
 describe("Coverage - Edge Cases", () => {
