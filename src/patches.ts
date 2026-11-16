@@ -3,6 +3,8 @@
  * Track and generate patches for state mutations
  */
 
+import { assertSafePath } from "./safe-path";
+
 export type PatchOperation = "add" | "remove" | "replace";
 
 export interface Patch {
@@ -276,6 +278,8 @@ function getType(value: any): string {
  * Apply patches to a base state
  */
 export function applyPatches<T>(base: T, patches: Patch[]): T {
+  // Validate the whole batch before reading any source property.
+  for (const patch of patches) assertSafePath(patch.path);
   let result = base;
 
   for (const patch of patches) {
