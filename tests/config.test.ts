@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { getConfig, resetConfig, setAutoFreeze, setUseStrictShallowCopy } from "../src/config";
 import { craft } from "../src/craft";
 
 describe("Configuration", () => {
+  afterEach(() => resetConfig());
   beforeEach(() => {
     // Reset config before each test
     resetConfig();

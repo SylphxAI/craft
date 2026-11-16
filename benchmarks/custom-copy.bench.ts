@@ -1,5 +1,5 @@
 import { produce } from "immer";
-import { bench, describe } from "vitest";
+import { afterAll, beforeAll, bench, describe } from "vitest";
 import { craft, setCustomShallowCopy } from "../src";
 
 // Custom class for testing
@@ -102,7 +102,8 @@ describe("Custom shallow copy with complex objects", () => {
 
     bench("craft - update array of complex objects", () => {
       craft(complexState, (draft) => {
-        draft.objects[50]!.data.value = 999;
+        // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires index-signature access here.
+        draft.objects[50]!.data["value"] = 999;
       });
     });
   });

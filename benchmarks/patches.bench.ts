@@ -1,11 +1,11 @@
 import {
-  applyPatches as immerApplyPatches,
   enablePatches,
+  applyPatches as immerApplyPatches,
   produceWithPatches as immerProduceWithPatches,
 } from "immer";
 import { bench, describe } from "vitest";
-import { applyPatches } from "../src/patches";
 import { craftWithPatches } from "../src/craft-with-patches";
+import { applyPatches } from "../src/patches";
 
 // Enable immer patches plugin
 enablePatches();

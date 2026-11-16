@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { resetConfig } from "../src/config";
-import { type Patch, applyPatches } from "../src/patches";
 import { craftWithPatches } from "../src/craft-with-patches";
+import { type Patch, applyPatches } from "../src/patches";
 
 describe("Patches - craftWithPatches", () => {
   beforeEach(() => {
