@@ -13,6 +13,8 @@ import { assertSafeProperty } from "./safe-path";
 import {
   DRAFT_STATE,
   type DraftState,
+  assertDraftActive,
+  assertDraftDescriptor,
   getState,
   isDraft,
   isDraftable,
@@ -55,6 +57,8 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
     get(_, prop) {
       // Fast path: DRAFT_STATE symbol
       if (prop === DRAFT_STATE) return state;
+
+      assertDraftActive(state);
 
       // Native array species algorithms read constructor. Treat it as absent
       // rather than exposing a constructor/prototype traversal through drafts.
@@ -110,6 +114,7 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
           // Only use this optimization if we haven't created a copy yet
           if (prop === "push" && !state.copy) {
             return function (this: any, ...items: any[]) {
+              assertDraftActive(state);
               if (!state.modified) {
                 state.modified = true;
                 if (state.parent) {
@@ -183,6 +188,7 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
     },
 
     set(_, prop, value) {
+      assertDraftActive(state);
       assertSafeProperty(prop);
       // If using array appends optimization, need to materialize copy for non-append operations
       if (state.arrayAppends && state.arrayAppends.length > 0) {
@@ -236,6 +242,7 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
     },
 
     deleteProperty(_, prop) {
+      assertDraftActive(state);
       assertSafeProperty(prop);
       markChanged(state);
       delete state.copy![prop];
@@ -247,7 +254,9 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
     },
 
     defineProperty(target, prop, descriptor) {
+      assertDraftActive(state);
       assertSafeProperty(prop);
+      assertDraftDescriptor(state, prop, descriptor);
       markChanged(state);
       state.drafts?.delete(prop);
       return (
@@ -261,15 +270,18 @@ export function createProxy(base: any, parent: DraftState | null = null): any {
     },
 
     has(_, prop) {
+      assertDraftActive(state);
       assertSafeProperty(prop);
       return prop in (state.copy ?? state.base);
     },
 
     ownKeys(_) {
+      assertDraftActive(state);
       return Reflect.ownKeys(state.copy ?? state.base);
     },
 
     getOwnPropertyDescriptor(target, prop) {
+      assertDraftActive(state);
       assertSafeProperty(prop);
       const fixed = Reflect.getOwnPropertyDescriptor(target, prop);
       if (fixed && !fixed.configurable && prop !== "length") return fixed;

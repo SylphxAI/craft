@@ -18,6 +18,7 @@ export interface DraftState {
   revoked: boolean;
   finalized: boolean; // Prevent duplicate finalization
   drafts?: Map<any, any>; // Store child drafts directly on state
+  propertyDrafts?: Map<string | symbol, any>; // Drafts for collection own properties
   // Array mutation optimizations - avoid O(n) copy for push/pop operations
   arrayAppends?: any[]; // Items to append (for push operations)
   arrayTruncate?: number; // New length (for pop operations)
@@ -37,6 +38,29 @@ export function isDraftable(value: any): boolean {
 
 export function getState(draft: any): DraftState | undefined {
   return draft?.[DRAFT_STATE];
+}
+
+/** A finished draft is no longer a writable or readable working value. */
+export function assertDraftActive(state: DraftState): void {
+  if (state.finalized || state.revoked) throw new TypeError("Cannot use a finalized draft");
+}
+
+/**
+ * A fixed object-valued target property must expose its exact raw value under
+ * Proxy invariants. Refuse that definition rather than bypass nested guards.
+ * Existing base descriptors are virtualized by the draft, not installed on its
+ * target, so their values can still be drafted and copied immutably.
+ */
+export function assertDraftDescriptor(
+  state: DraftState,
+  prop: string | symbol,
+  descriptor: PropertyDescriptor,
+): void {
+  const previous = Reflect.getOwnPropertyDescriptor(latest(state), prop);
+  const next = { ...previous, ...descriptor };
+  if (!next.configurable && !next.writable && "value" in next && isDraftable(next.value)) {
+    throw new TypeError("Draft object-valued properties must be configurable or writable");
+  }
 }
 
 export function latest(state: DraftState): any {
@@ -98,11 +122,12 @@ export function current<T>(value: T): T {
       const draft = collectionState.drafts?.get(item) ?? item;
       return isDraft(draft) ? current(draft) : item;
     };
-    return (
+    const result: any =
       source instanceof Map
         ? new Map([...source].map(([key, item]) => [key, snapshotValue(item)]))
-        : new Set([...source].map(snapshotValue))
-    ) as T;
+        : new Set([...source].map(snapshotValue));
+    snapshotCollectionProperties(collectionState, source, result);
+    return result as T;
   }
   if (!isDraft(value)) return value;
 
@@ -160,6 +185,20 @@ export function current<T>(value: T): T {
 
   // Return frozen snapshot
   return freeze(result, true);
+}
+
+function snapshotCollectionProperties(state: DraftState, source: any, result: any): void {
+  for (const prop of Reflect.ownKeys(source)) {
+    const descriptor = Reflect.getOwnPropertyDescriptor(source, prop);
+    if (!descriptor) continue;
+    if ("value" in descriptor) {
+      const value = state.propertyDrafts?.get(prop) ?? descriptor.value;
+      descriptor.value = isDraft(value) ? current(value) : value;
+    }
+    // result is a fresh Map/Set, so even a default non-configurable descriptor
+    // can be installed without violating a proxy target invariant.
+    Object.defineProperty(result, prop, descriptor);
+  }
 }
 
 function defaultShallowCopy<T>(base: T): T {
@@ -241,6 +280,7 @@ export function finalize(state: DraftState, autoFreeze?: boolean): any {
   const shouldFreeze = autoFreeze ?? getConfig().autoFreeze;
 
   if (!state.modified) {
+    state.finalized = true;
     // Check if already frozen
     const value = state.base;
     if (Object.isFrozen(value)) {
@@ -282,6 +322,7 @@ export function finalize(state: DraftState, autoFreeze?: boolean): any {
       }
     }
 
+    state.copy = result;
     return shouldFreeze ? freeze(result, false) : result;
   }
 
@@ -290,7 +331,8 @@ export function finalize(state: DraftState, autoFreeze?: boolean): any {
 
   // Optimized path for large arrays
   if (isArray && result.length >= LARGE_ARRAY_THRESHOLD) {
-    return finalizeLargeArray(result, shouldFreeze);
+    state.copy = finalizeLargeArray(result, shouldFreeze);
+    return state.copy;
   }
 
   // Optimized path for arrays
@@ -341,6 +383,7 @@ export function finalize(state: DraftState, autoFreeze?: boolean): any {
           filtered.push(value);
         }
       }
+      state.copy = filtered;
       return shouldFreeze ? freeze(filtered, false) : filtered;
     }
 
