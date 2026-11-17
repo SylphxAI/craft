@@ -15,6 +15,12 @@
     "indentWidth": 2,
     "lineWidth": 100
   },
+  "overrides": [
+    {
+      "include": ["package.json"],
+      "formatter": { "enabled": false }
+    }
+  ],
   "organizeImports": {
     "enabled": true
   },
